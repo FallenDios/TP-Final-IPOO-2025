@@ -1,24 +1,47 @@
 <?php
+
 class Viaje {
     private $idviaje;
     private $vdestino;
     private $vcantmaxpasajeros;
+    private $objempresa;
+    private $objresponsableV;
+    private $colObjPasajeros;
     private $vimporte;
-    private $objResponsable;
-    private $objEmpresa;
-    private $colPasajeros;
+    private $mensajeoperacion;
 
-    public function __construct($idviaje = null, $vdestino = "", $vcantmaxpasajeros = 0, $vimporte = 0, $objResponsable = null, $objEmpresa = null, $colPasajeros = []) {
-        $this->idviaje = $idviaje;
-        $this->vdestino = $vdestino;
-        $this->vcantmaxpasajeros = $vcantmaxpasajeros;
-        $this->vimporte = $vimporte;
-        $this->objResponsable = $objResponsable;
-        $this->objEmpresa = $objEmpresa;
-        $this->colPasajeros = $colPasajeros;
+    public function __construct() {
+        $this->idviaje = "";
+        $this->vdestino = "";
+        $this->vcantmaxpasajeros = "";
+        $this->objempresa = new Empresa();
+        $this->objresponsableV = new ResponsableV();
+        $this->colObjPasajeros = [];
+        $this->vimporte = "";
+        $this->mensajeoperacion = "";
     }
 
-    // Métodos de acceso
+public function cargar($idviaje, $vdestino, $vcantmaxpasajeros, $idempresa, $objResponsableV, $vimporte) {
+    $empresa = new Empresa();
+
+    // Si por error se recibe un objeto Empresa, extraigo su ID
+    if (is_object($idempresa) && get_class($idempresa) === 'Empresa') {
+        $idempresa = $idempresa->getIdempresa();
+    }
+
+    $empresa->Buscar($idempresa);
+
+    $this->setIdviaje($idviaje);
+    $this->setVdestino($vdestino);
+    $this->setVcantmaxpasajeros($vcantmaxpasajeros);
+    $this->setObjempresa($empresa);
+    $this->setObjresponsableV($objResponsableV);
+    $this->setColObjPasajeros([]); // inicia vacía
+    $this->setVimporte($vimporte);
+}
+
+
+
     public function getIdviaje() {
         return $this->idviaje;
     }
@@ -43,6 +66,30 @@ class Viaje {
         $this->vcantmaxpasajeros = $vcantmaxpasajeros;
     }
 
+    public function getObjempresa() {
+        return $this->objempresa;
+    }
+
+    public function setObjempresa($objempresa) {
+        $this->objempresa = $objempresa;
+    }
+
+    public function getObjresponsableV() {
+        return $this->objresponsableV;
+    }
+
+    public function setObjresponsableV($objresponsableV) {
+        $this->objresponsableV = $objresponsableV;
+    }
+
+    public function getColObjPasajeros() {
+        return $this->colObjPasajeros;
+    }
+
+    public function setColObjPasajeros($colObjPasajeros) {
+        $this->colObjPasajeros = $colObjPasajeros;
+    }
+
     public function getVimporte() {
         return $this->vimporte;
     }
@@ -51,132 +98,149 @@ class Viaje {
         $this->vimporte = $vimporte;
     }
 
-    public function getObjResponsable() {
-        return $this->objResponsable;
+    public function getMensajeoperacion() {
+        return $this->mensajeoperacion;
     }
 
-    public function setObjResponsable($objResponsable) {
-        $this->objResponsable = $objResponsable;
+    public function setMensajeoperacion($mensajeoperacion) {
+        $this->mensajeoperacion = $mensajeoperacion;
     }
 
-    public function getObjEmpresa() {
-        return $this->objEmpresa;
+    public function Buscar($id) {
+        $base = new BaseDatos();
+        $consulta = "Select * from viaje where idviaje=" . $id;
+        $resp = false;
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($consulta)) {
+                if ($row2 = $base->Registro()) {
+                    $empresa = new Empresa();
+                    $empresa->Buscar($row2['idempresa']);
+
+                    $responsable = new ResponsableV();
+                    $responsable->Buscar($row2['rnumeroempleado']);
+
+                    $this->cargar($row2['idviaje'], $row2['vdestino'], $row2['vcantmaxpasajeros'], $empresa, $responsable, $row2['vimporte']);
+                    $resp = true;
+                }
+            } else {
+                $this->setMensajeoperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeoperacion($base->getError());
+        }
+        return $resp;
     }
 
-    public function setObjEmpresa($objEmpresa) {
-        $this->objEmpresa = $objEmpresa;
+    public function listar($condicion = "") {
+        $arregloViajes = null;
+        $base = new BaseDatos();
+        $consulta = "Select * from viaje";
+        if ($condicion != "") {
+            $consulta .= ' where ' . $condicion;
+        }
+        $consulta .= " order by idviaje ";
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($consulta)) {
+                $arregloViajes = [];
+                while ($row2 = $base->Registro()) {
+                    $viaje = new Viaje();
+
+                    $empresa = new Empresa();
+                    $empresa->Buscar($row2['idempresa']);
+
+                    $responsable = new ResponsableV();
+                    $responsable->Buscar($row2['rnumeroempleado']);
+
+                    $viaje->cargar($row2['idviaje'], $row2['vdestino'], $row2['vcantmaxpasajeros'], $empresa, $responsable, $row2['vimporte']);
+
+                    array_push($arregloViajes, $viaje);
+                }
+            } else {
+                $this->setMensajeoperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeoperacion($base->getError());
+        }
+        return $arregloViajes;
     }
 
-    public function getColPasajeros() {
-        return $this->colPasajeros;
+
+
+
+    public function Insertar() {
+    $base = new BaseDatos();
+    $resp = false;
+    $consultaInsertar =  "INSERT INTO viaje (vdestino, vcantmaxpasajeros, idempresa, rnumeroempleado, vimporte)
+        VALUES (
+            '".$this->getVdestino()."',
+            '".$this->getVcantmaxpasajeros()."',
+            '".$this->getObjempresa()->getIdempresa()."',
+            '".$this->getObjresponsableV()->getRnumeroempleado()."',
+            '".$this->getVimporte()."'
+        )";
+if($base->Iniciar()){
+    $idInsertado = $base->devuelveIDInsercion($consultaInsertar);
+    if ($idInsertado) {
+        $this->setIdviaje($idInsertado);
+        $resp = true;
+    } else {
+        $this->setMensajeoperacion($base->getError());
+    }
+}else{
+    $this->setMensajeoperacion($base->getERROR());
+}
+    return $resp;
+}
+
+    public function Modificar() {
+        $resp = false;
+        $base = new BaseDatos();
+        $idEmpresa = $this->getObjempresa()->getIdempresa();
+        $rnum = $this->getObjresponsableV()->getRnumeroempleado();
+        $consultaModifica = "UPDATE viaje SET 
+            vdestino = '{$this->getVdestino()}',
+            vcantmaxpasajeros = {$this->getVcantmaxpasajeros()},
+            idempresa = {$idEmpresa},
+            rnumeroempleado = {$rnum},
+            vimporte = {$this->getVimporte()}
+            WHERE idviaje = {$this->getIdviaje()}";
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($consultaModifica)) {
+                $resp = true;
+            } else {
+                $this->setMensajeoperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeoperacion($base->getError());
+        }
+        return $resp;
     }
 
-    public function setColPasajeros($colPasajeros) {
-        $this->colPasajeros = $colPasajeros;
+    public function Eliminar() {
+        $base = new BaseDatos();
+        $resp = false;
+        if ($base->Iniciar()) {
+            $consultaBorra = "DELETE FROM viaje WHERE idviaje=" . $this->getIdviaje();
+            if ($base->Ejecutar($consultaBorra)) {
+                $resp = true;
+            } else {
+                $this->setMensajeoperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeoperacion($base->getError());
+        }
+        return $resp;
     }
 
     public function __toString() {
-        $texto = "ID Viaje: " . $this->getIdviaje() .
-                 "\nDestino: " . $this->getVdestino() .
-                 "\nCant. Máxima: " . $this->getVcantmaxpasajeros() .
-                 "\nImporte: $" . $this->getVimporte() .
-                 "\n\nResponsable:\n" . $this->getObjResponsable() .
-                 "\n\nEmpresa:\n" . $this->getObjEmpresa() .
-                 "\n\nPasajeros:\n";
-
-        foreach ($this->getColPasajeros() as $pasajero) {
-            $texto .= "\n" . $pasajero . "\n";
-        }
-
-        return $texto;
-    }
-
-    // ORM
-    public function insertar() {
-        $base = new BaseDatos();
-        $exito = false;
-
-        $consulta = "INSERT INTO viaje (vdestino, vcantmaxpasajeros, idempresa, rnumeroempleado, vimporte) VALUES ('" .
-            $this->getVdestino() . "', '" . $this->getVcantmaxpasajeros() . "', '" . $this->getObjEmpresa()->getIdempresa() . "', '" . $this->getObjResponsable()->getRnumeroempleado() . "', '" . $this->getVimporte() . "')";
-
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consulta)) {
-                $id = $base->devuelveIDInsercion();
-                if ($id !== null) {
-                    $this->setIdviaje($id);
-                    $exito = true;
-                }
-            }
-        }
-
-        return $exito;
-    }
-
-    public function modificar() {
-        $base = new BaseDatos();
-        $exito = false;
-
-        $consulta = "UPDATE viaje SET vdestino = '" . $this->getVdestino() .
-                    "', vcantmaxpasajeros = '" . $this->getVcantmaxpasajeros() .
-                    "', idempresa = '" . $this->getObjEmpresa()->getIdempresa() .
-                    "', rnumeroempleado = '" . $this->getObjResponsable()->getRnumeroempleado() .
-                    "', vimporte = '" . $this->getVimporte() .
-                    "' WHERE idviaje = " . $this->getIdviaje();
-
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consulta)) {
-                $exito = true;
-            }
-        }
-
-        return $exito;
-    }
-
-   public function eliminar() {
-    $base = new BaseDatos();
-    $exito = false;
-
-    //eliminamos a  los pasajeros relacionados
-    $colPasajeros = Pasajero::buscar("idviaje = " . $this->getIdviaje());
-    foreach ($colPasajeros as $pasajero) {
-        $pasajero->eliminar();
-    }
-
-    //eliminamos el viaje
-    $consulta = "DELETE FROM viaje WHERE idviaje = " . $this->getIdviaje();
-
-    if ($base->Iniciar()) {
-        if ($base->Ejecutar($consulta)) {
-            $exito = true;
-        }
-    }
-
-    return $exito;
-}
-
-    public static function buscar($condicion = "") {
-        $colViajes = [];
-        $base = new BaseDatos();
-        $consulta = "SELECT * FROM viaje";
-        if ($condicion != "") {
-            $consulta .= " WHERE " . $condicion;
-        }
-
-        if ($base->Iniciar()) {
-            $res = $base->Registro($consulta);
-            if ($res) {
-                while ($row = mysqli_fetch_assoc($res)) {
-                    $objEmpresa = Empresa::buscar("idempresa=" . $row['idempresa'])[0];
-                    $objResponsable = ResponsableV::buscar("rnumeroempleado=" . $row['rnumeroempleado'])[0];
-                    $colPasajeros = Pasajero::buscar("idviaje=" . $row['idviaje']);
-
-                    $objViaje = new Viaje($row['idviaje'], $row['vdestino'], $row['vcantmaxpasajeros'], $row['vimporte'], $objResponsable, $objEmpresa, $colPasajeros);
-                    $colViajes[] = $objViaje;
-                }
-            }
-        }
-
-        return $colViajes;
+        return "ID del viaje: " . $this->getIdviaje() . "\n" .
+            "Destino: " . $this->getVdestino() . "\n" .
+            "Cantidad máxima de pasajeros: " . $this->getVcantmaxpasajeros() . "\n" .
+            "Importe: $" . $this->getVimporte() . "\n" .
+            "Empresa: " . $this->getObjempresa()->getIdempresa() . "\n" .
+            "Responsable: " . $this->getObjresponsableV()->getRnumeroempleado() . "\n";
     }
 }
+
+
 ?>
