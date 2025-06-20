@@ -1,5 +1,7 @@
 <?php
 
+include_once "BaseDatos.php";
+
 class Persona {
     private $nombre;
     private $apellido;
