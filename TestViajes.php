@@ -1,9 +1,10 @@
 <?php
-include_once 'BaseDatos.php';
-include_once 'Empresa.php';
-include_once 'ResponsableV.php';
-include_once 'Pasajero.php';
-include_once 'Viaje.php';
+include_once "BaseDatos.php";
+include_once "empresa.php";
+include_once "persona.php";
+include_once "responsableV.php";
+include_once "viaje.php";
+include_once "pasajero.php";
 
 class TestViaje{
 
