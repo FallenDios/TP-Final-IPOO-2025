@@ -1,126 +1,143 @@
 <?php
-class ResponsableV {
+include_once "BaseDatos.php";
+include_once "persona.php";
+
+class ResponsableV extends Persona {
+
     private $rnumeroempleado;
-    private $rnumerolicencia;
-    private $rnombre;
-    private $rapellido;
+    private $rnumerolicencia;   
 
-    public function __construct($rnumeroempleado = null, $rnumerolicencia = "", $rnombre = "", $rapellido = "") {
+    public function __construct($nombre = "", $apellido = "", $rnumeroempleado = 0, $rnumerolicencia = "") {
+        parent::__construct($nombre, $apellido); 
         $this->rnumeroempleado = $rnumeroempleado;
         $this->rnumerolicencia = $rnumerolicencia;
-        $this->rnombre = $rnombre;
-        $this->rapellido = $rapellido;
     }
 
-    // Métodos de acceso
-    public function getRnumeroempleado() {
-        return $this->rnumeroempleado;
+
+    public function cargarResponsable($nombre, $apellido, $rnumeroempleado, $rnumerolicencia){
+        $this->cargar($nombre, $apellido);
+        $this->setRnumeroempleado($rnumeroempleado);
+        $this->setRnumerolicencia($rnumerolicencia);
     }
 
-    public function setRnumeroempleado($rnumeroempleado) {
-        $this->rnumeroempleado = $rnumeroempleado;
+    public function getRnumeroempleado() {return $this->rnumeroempleado;}
+    public function getRnumerolicencia() {return $this->rnumerolicencia;}
+
+    public function setRnumeroempleado($rnumeroempleado): void {$this->rnumeroempleado = $rnumeroempleado;}
+    public function setRnumerolicencia($rnumerolicencia): void {$this->rnumerolicencia = $rnumerolicencia;}
+
+
+    public function __toString()
+    {
+        return 
+                "Responsable:\n" .
+                parent::__toString() . 
+                "Número Empleado: " . $this->getRnumeroempleado() . "\n" .
+                "Número Licencia: " . $this->getRnumerolicencia() . "\n";
     }
 
-    public function getRnumerolicencia() {
-        return $this->rnumerolicencia;
-    }
-
-    public function setRnumerolicencia($rnumerolicencia) {
-        $this->rnumerolicencia = $rnumerolicencia;
-    }
-
-    public function getRnombre() {
-        return $this->rnombre;
-    }
-
-    public function setRnombre($rnombre) {
-        $this->rnombre = $rnombre;
-    }
-
-    public function getRapellido() {
-        return $this->rapellido;
-    }
-
-    public function setRapellido($rapellido) {
-        $this->rapellido = $rapellido;
-    }
-
-    public function __toString() {
-        return "Empleado #: " . $this->getRnumeroempleado() .
-               "\nLicencia: " . $this->getRnumerolicencia() .
-               "\nNombre: " . $this->getRnombre() .
-               "\nApellido: " . $this->getRapellido();
-    }
-
-    // ORM
-    public function insertar() {
+    public static function Listar($condicion = ""){
+        $arregloResponsable = null;
         $base = new BaseDatos();
-        $exito = false;
-        $consulta = "INSERT INTO responsable (rnumerolicencia, rnombre, rapellido) VALUES ('" . $this->getRnumerolicencia() . "', '" . $this->getRnombre() . "', '" . $this->getRapellido() . "')";
-
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consulta)) {
-                $id = $base->devuelveIDInsercion();
-                if ($id !== null) {
-                    $this->setRnumeroempleado($id);
-                    $exito = true;
-                }
-            }
-        }
-
-        return $exito;
-    }
-
-    public function modificar() {
-        $base = new BaseDatos();
-        $exito = false;
-        $consulta = "UPDATE responsable SET rnumerolicencia = '" . $this->getRnumerolicencia() .
-                    "', rnombre = '" . $this->getRnombre() .
-                    "', rapellido = '" . $this->getRapellido() .
-                    "' WHERE rnumeroempleado = " . $this->getRnumeroempleado();
-
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consulta)) {
-                $exito = true;
-            }
-        }
-
-        return $exito;
-    }
-
-    public function eliminar() {
-        $base = new BaseDatos();
-        $exito = false;
-        $consulta = "DELETE FROM responsable WHERE rnumeroempleado = " . $this->getRnumeroempleado();
-
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consulta)) {
-                $exito = true;
-            }
-        }
-
-        return $exito;
-    }
-
-    public static function buscar($condicion = "") {
-        $colResponsables = [];
-        $base = new BaseDatos();
-        $consulta = "SELECT * FROM responsable";
+        $consultaResponsable = "SELECT * FROM responsable";
         if ($condicion != "") {
-            $consulta .= " WHERE " . $condicion;
+            $consultaResponsable .= ' WHERE ' . $condicion;
         }
-
+        $consultaResponsable .= " ORDER BY rnumeroempleado ";
         if ($base->Iniciar()) {
-            $res = $base->Registro($consulta);
-            if ($res) {
-                while ($row = mysqli_fetch_assoc($res)) {
-                    $obj = new ResponsableV($row['rnumeroempleado'], $row['rnumerolicencia'], $row['rnombre'], $row['rapellido']);
-                    $colResponsables[] = $obj;
+            if ($base->Ejecutar($consultaResponsable)) {
+                $arregloResponsable = array();
+                while ($row2 = $base->Registro()) {
+                    $objResponsable = new ResponsableV();
+                    $objResponsable->cargarResponsable($row2['rnombre'], $row2['rapellido'], $row2['rnumeroempleado'], $row2['rnumerolicencia']);
+                    array_push($arregloResponsable, $objResponsable);
                 }
+            } else {
+                throw new Exception("Error al listar responsables: " . $base->getError());
             }
+        } else {
+            throw new Exception("Error al iniciar la base de datos: " . $base->getError());
         }
+        return $arregloResponsable;
 
-        return $colResponsables;
+}
+    public static function Buscar($rnumeroempleado){
+        $base = new BaseDatos();
+        $consultaResponsable = "SELECT * FROM responsable WHERE rnumeroempleado=" . $rnumeroempleado;
+        $resp = false;
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($consultaResponsable)) {
+                if ($row2 = $base->Registro()) {
+                    $objResponsable = new ResponsableV();
+                    $objResponsable->cargarResponsable($row2['rnombre'], $row2['rapellido'], $row2['rnumeroempleado'], $row2['rnumerolicencia']);
+                    $resp = $objResponsable;
+                }
+            } else {
+                throw new Exception("Error al buscar responsable: " . $base->getError());
+            }
+        } else {
+            throw new Exception("Error al iniciar la base de datos: " . $base->getError());
+        }
+        return $resp;
+}
+
+
+
+
+    public function Insertar(){
+        $base=new BaseDatos();
+        $resp= false;
+        $consultaInsertar="INSERT INTO responsable(rnumeroempleado, rnumerolicencia, rnombre, rapellido) 
+                   VALUES (".$this->getRnumeroempleado().", '".$this->getRnumerolicencia()."', '".parent::getNombre()."', '".parent::getApellido()."')";
+
+            if ($base->Iniciar()) {
+        $idInsertado = $base->devuelveIDInsercion($consultaInsertar); // ejecuta y devuelve ID
+        if ($idInsertado !== null) {
+            $this->setRnumeroempleado($idInsertado);
+            $resp = true;
+        } else {
+            parent::setMensajeoperacion("Responsable no insertado: " . $base->getError());
+        }
+    } else {
+        parent::setMensajeoperacion("Error al iniciar conexión.");
+    }
+
+        
+        return $resp;
+    }
+
+    public function modificar(){
+        $base=new BaseDatos();
+        $resp= false;
+        $consultaModificar="UPDATE responsable SET rnumerolicencia='".$this->getRnumerolicencia()."', rnombre='".parent::getNombre()."', rapellido='".parent::getApellido()."' WHERE rnumeroempleado=".$this->getRnumeroempleado();
+        if($base->Iniciar()){
+            if($base->Ejecutar($consultaModificar)){
+                $resp= true;
+            } else {
+                parent::setMensajeoperacion("Responsable no modificado");
+            }
+        } else {
+            parent::setMensajeoperacion("Responsable no modificado");
+        }
+        return $resp;
+    }
+    public function eliminar(){
+        $base=new BaseDatos();
+        $resp= false;
+        $consultaEliminar="DELETE FROM responsable WHERE rnumeroempleado=".$this->getRnumeroempleado();
+        if($base->Iniciar()){
+            if($base->Ejecutar($consultaEliminar)){
+                $resp= true;
+            } else {
+                parent::setMensajeoperacion("Responsable no eliminado");
+            }
+        } else {
+            parent::setMensajeoperacion("Responsable no eliminado");
+        }
+        return $resp;
     }
 }
+
+
+
 ?>
