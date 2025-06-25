@@ -56,5 +56,11 @@ class BaseDatos {
         }
         return $id;
     }
+
+
+    // Devuelve el último error de la conexión
+public function getError() {
+    return mysqli_error($this->conexion);
+}
 }
 ?>
