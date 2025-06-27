@@ -1,159 +1,129 @@
 <?php 
-include_once "BaseDatos.php";
+include_once "BaseDatos.php"; // Se incluye la clase que gestiona la conexión y operaciones con la base de datos.
 
-// Clase Empresa: representa una entidad del sistema con sus atributos y operaciones
 class Empresa {
-
-    // Atributos privados
+    // Atributos privados de la clase
     private $idempresa;
-    private $enombre;
-    private $edireccion;
-    private $mensajeoperacion; // usado para almacenar mensajes de error
+    private $nombre;
+    private $direccion;
+    private $mensajeOperacion; // Para registrar mensajes de error o estado de operación
 
-    // permite inicializar el objeto con valores opcionales
-    public function __construct($idempresa = 0, $enombre = "", $edireccion = "") {
-        $this->idempresa = $idempresa;
-        $this->enombre = $enombre;
-        $this->edireccion = $edireccion;
+    // Constructor: inicializa los atributos con valores por defecto
+    public function __construct() {
+        $this->idempresa = 0;
+        $this->nombre = "";
+        $this->direccion = "";
+        $this->mensajeOperacion = "";
     }
 
-    // cargar: setea todos los atributos del objeto usando los métodos set
-    public function cargar($idempresa, $enombre, $edireccion){
-        $this->setIdempresa($idempresa);
-        $this->setEnombre($enombre);
-        $this->setEdireccion($edireccion);
+    // Método para cargar valores a los atributos usando los métodos set
+    public function cargar($unNombre, $unaDireccion) {
+        $this->setNombre($unNombre);
+        $this->setDireccion($unaDireccion);
     }
 
     // Métodos de acceso (getters)
-    public function getIdempresa() { return $this->idempresa; }
-    public function getEnombre() { return $this->enombre; }
-    public function getEdireccion() { return $this->edireccion; }
-    public function getmensajeoperacion() { return $this->mensajeoperacion; }
+    public function getIdEmpresa() { return $this->idempresa; }
+    public function getNombre() { return $this->nombre; }
+    public function getDireccion() { return $this->direccion; }
+    public function getMensajeOperacion() { return $this->mensajeOperacion; }
 
     // Métodos de modificación (setters)
-    public function setIdempresa($idempresa): void { $this->idempresa = $idempresa; }
-    public function setEnombre($enombre): void { $this->enombre = $enombre; }
-    public function setEdireccion($edireccion): void { $this->edireccion = $edireccion; }
-    public function setmensajeoperacion($mensajeoperacion) { $this->mensajeoperacion = $mensajeoperacion; }
+    public function setIdEmpresa($idempresa) { $this->idempresa = $idempresa; }
+    public function setNombre($enombre) { $this->nombre = $enombre; }
+    public function setDireccion($edireccion) { $this->direccion = $edireccion; }
+    public function setMensajeOperacion($mensajeOperacion) { $this->mensajeOperacion = $mensajeOperacion; }
 
-    //__toString: retorna una representación textual del objeto Empresa
+    // Método mágico __toString: retorna una cadena con los datos de la empresa
     public function __toString() {
-        return "ID Empresa: " . $this->getIdempresa() . "\n" .
-               "Nombre Empresa: " . $this->getEnombre() . "\n" .
-               "Dirección Empresa: " . $this->getEdireccion() . "\n";
+        return
+        "ID Empresa: " . $this->getIdEmpresa() . "\n" .
+        "Nombre: " . $this->getNombre() . "\n" .
+        "Direccion: " . $this->getDireccion() . "\n"; 
     }
 
-    // Buscar: busca una empresa por ID en la base de datos
-    public function Buscar($idempresa){
-        $base = new BaseDatos();
-        $consultaEmpresa = "Select * from empresa where idempresa = " . $idempresa;
-        $resp = false;
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consultaEmpresa)) {
-                // Se espera una única fila de resultado
-                if ($row2 = $base->Registro()) {
-                    $this->setIdempresa($idempresa);
-                    $this->setEnombre($row2['enombre']);
-                    $this->setEdireccion($row2['edireccion']);
-                    $resp = true;
+    // Método que busca una empresa por ID en la base de datos
+    public function buscar($idEmpresa) {
+        $baseDatos = new BaseDatos();
+        $respuesta = false;
+
+        $consulta = "SELECT * FROM empresa WHERE idempresa = " . $idEmpresa;
+        if ($baseDatos->Iniciar()) {
+            if ($baseDatos->Ejecutar($consulta)) {
+                if ($fila = $baseDatos->Registro()) {
+                    // Se setean los atributos con los valores obtenidos
+                    $this->setIdEmpresa($fila['idempresa']);
+                    $this->setNombre($fila['enombre']);
+                    $this->setDireccion($fila['edireccion']);
+                    $respuesta = true;
+                } else {
+                    $this->setMensajeOperacion("No existe empresa con ese ID.");
                 }
             } else {
-                $this->setmensajeoperacion($base->getError());
+                $this->setMensajeOperacion($baseDatos->getError());
             }
         } else {
-            $this->setmensajeoperacion($base->getError());
+            $this->setMensajeOperacion($baseDatos->getError());
         }
-        return $resp;
+        return $respuesta;
     }
 
-    //listar: devuelve un arreglo de objetos Empresa que cumplen una condición opcional
-    public function listar($condicion = ""){
-        $arregloEmpresa = null;
-        $base = new BaseDatos();
-        $consultaEmpresas = "Select * from empresa";
-        if ($condicion != "") {
-            $consultaEmpresas .= ' where ' . $condicion;
-        }
-        $consultaEmpresas .= " order by enombre";
-        
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consultaEmpresas)) {
-                $arregloEmpresa = array();
-                // Se recorren todas las filas retornadas para crear los objetos Empresa
-                while ($row2 = $base->Registro()) {
-                    $idempresa = $row2['idempresa'];
-                    $enombre = $row2['enombre'];
-                    $edireccion = $row2['edireccion'];
-                    $emp = new Empresa($idempresa, $enombre, $edireccion);
-                    array_push($arregloEmpresa, $emp);
-                }
+    // Método que inserta un nuevo registro en la tabla empresa
+    public function insertar() {
+        $baseDatos = new BaseDatos();
+        $respuesta = false;
+
+        if ($baseDatos->Iniciar()) {
+            $consultaInsertar = "INSERT INTO empresa(enombre, edireccion) 
+            VALUES('" . $this->getNombre() . "', '" . $this->getDireccion() . "')";
+            $id = $baseDatos->devuelveIDInsercion($consultaInsertar);
+
+            if ($id != null) {
+                $this->setIdEmpresa($id); // Se asigna el ID generado por la base
+                $respuesta = true;
             } else {
-                $this->setmensajeoperacion($base->getError());
+                $this->setMensajeOperacion($baseDatos->getError());
             }
         } else {
-            $this->setmensajeoperacion($base->getError());
+            $this->setMensajeOperacion($baseDatos->getError());
         }
-        return $arregloEmpresa;
+        return $respuesta;
     }
 
-    // insertar: agrega una nueva empresa a la base de datos
-    public function insertar(){
-        $base = new BaseDatos();
-        $resp = false;
-        $consultaInsertar = "INSERT INTO empresa(enombre, edireccion) 
-            VALUES (
-                '".$this->getEnombre()."',
-                '".$this->getEdireccion()."'
-            )";
-        if ($base->Iniciar()) {
-            if ($idInsertado = $base->devuelveIDInsercion($consultaInsertar)) {
-                $this->setIdempresa($idInsertado);
-                $resp = true;
+    // Método que actualiza los datos de una empresa existente
+    public function modificar() {
+        $baseDatos = new BaseDatos();
+        $respuesta = false;
+
+        if ($baseDatos->Iniciar()) {
+            $consultaModificar = "UPDATE empresa SET enombre='" . $this->getNombre() . "', edireccion='" . $this->getDireccion() .
+            "' WHERE idempresa=" . $this->getIdEmpresa();
+            if ($baseDatos->Ejecutar($consultaModificar)) {
+                $respuesta = true;
             } else {
-                $this->setmensajeoperacion($base->getError());
+                $this->setMensajeOperacion($baseDatos->getError());
             }
         } else {
-            $this->setmensajeoperacion($base->getError());
+            $this->setMensajeOperacion($baseDatos->getError());
         }
-        return $resp;
+        return $respuesta;
     }
 
-    //modificar: actualiza los datos de una empresa en la base
-    public function modificar(){
-        $resp = false;
-        $base = new BaseDatos();
-        $consultaModifica = "UPDATE empresa SET 
-            enombre = '".$this->getEnombre()."', 
-            edireccion = '".$this->getEdireccion()."' 
-            WHERE idempresa = ".$this->getIdempresa();
-        if ($base->Iniciar()) {
-            if ($base->Ejecutar($consultaModifica)) {
-                $resp = true;
+    // Método que elimina una empresa de la base de datos
+    public function eliminar() {
+        $baseDatos = new BaseDatos();
+        $respuesta = false;
+
+        if ($baseDatos->Iniciar()) {
+            $consultaEliminar = "DELETE FROM empresa WHERE idempresa=" . $this->getIdEmpresa();
+            if ($baseDatos->Ejecutar($consultaEliminar)) {
+                $respuesta = true;
             } else {
-                $this->setmensajeoperacion($base->getError());
+                $this->setMensajeOperacion($baseDatos->getError());
             }
         } else {
-            $this->setmensajeoperacion($base->getError());
+            $this->setMensajeOperacion($baseDatos->getError());
         }
-        return $resp;
+        return $respuesta;
     }
-
-    //eliminar: elimina la empresa de la base de datos
-    public function eliminar(){
-        $base = new BaseDatos();
-        $resp = false;
-        if ($base->Iniciar()) {
-            $consultaBorrar = "DELETE FROM empresa WHERE idempresa = " . $this->getIdempresa();
-            if ($base->Ejecutar($consultaBorrar)) {
-                $resp = true;
-            } else {
-                $this->setmensajeoperacion($base->getError());
-            }
-        } else {
-            $this->setmensajeoperacion($base->getError());
-        }
-        return $resp;
-    }
-
 }
-?>

@@ -1,263 +1,482 @@
-<?php 
-// Inclusión de clases necesarias para gestionar la lógica del sistema
-include_once "BaseDatos.php";
-include_once "empresa.php";
-include_once "persona.php";
-include_once "responsableV.php";
-include_once "viaje.php";
-include_once "pasajero.php";
+<?php
 
-// Clase TestViaje: contiene los menús y operaciones del sistema
-class TestViaje {
+include_once 'Empresa.php';
+include_once 'Responsable.php';
+include_once 'Pasajero.php';
+include_once 'Viaje.php';
+include_once 'ViajePasajero.php';
+/*
+$empresaV = new Empresa();
+$empresaV->cargar("Empresa Vuelo", "San Martin 123");
+$empresaA = new Empresa();
+$empresaA->cargar("Empresa Aterrizaje", "Mitre 456");
 
-    // Gestión de empresas (alta, modificación y baja)
-    public function gestionarEmpresa() {
-        echo "\n+================================+\n" .
-             "|      Gestionar  Empresas       |\n" .
-             "¦================================¦\n" .
-             "|1.- Ingresar nueva empresa      |\n" .
-             "|2.- Modificar empresa           |\n" .
-             "|3.- Eliminar empresa            |\n" .
-             "|Seleccione una opción: ";
+$empresaV->insertar();
+$empresaA->insertar();
 
-        $opcion = trim(fgets(STDIN));
+$responsableUno = new Responsable();
+$responsableUno->cargar(1,"Juan", "Juanales");
 
-        if ($opcion == 1) {
-            // Alta de empresa
-            $objEmpresa = new Empresa();
-            echo "Nombre: ";
-            $nombre = trim(fgets(STDIN));
-            echo "Dirección: ";
-            $direccion = trim(fgets(STDIN));
-            $objEmpresa->cargar(0, $nombre, $direccion);
-            if ($objEmpresa->Insertar()) {
-                echo "Empresa ingresada con éxito. ID: " . $objEmpresa->getIdempresa() . "\n";
-            } else {
-                echo "ERROR: " . $objEmpresa->getMensajeoperacion() . "\n";
+$responsableDos = new Responsable();
+$responsableDos->cargar(2,"Martina","Martinez");
+
+$responsableTres = new Responsable();
+$responsableTres->cargar(3,"Pedro", "Piedrita");
+
+$responsableUno->insertar();
+$responsableDos->insertar();
+$responsableTres->insertar();
+
+$viajeA = new Viaje();
+$viajeA->cargar("Seychelles", 3, $empresaV, $responsableUno,150000);
+$viajeB = new Viaje();
+$viajeB->cargar("Bahamas",100,$empresaV, $responsableUno, 130000);
+$viajeC = new Viaje();
+$viajeC->cargar("Manila",90,$empresaV,$responsableDos, 165000);
+$viajeD = new Viaje();
+$viajeD->cargar("Buenos Aires", 95, $empresaA, $responsableTres, 85000);
+$viajeE = new Viaje();
+$viajeE->cargar("Neuquen", 70, $empresaA, $responsableTres, 60000);
+$viajeF = new Viaje();
+$viajeF->cargar("Ushuaia", 65, $empresaA, $responsableTres, 70000);
+
+$viajeA->insertar();
+$viajeB->insertar();
+$viajeC->insertar();
+$viajeD->insertar();
+$viajeE->insertar();
+$viajeF->insertar();
+
+$pasajeroUno = new Pasajero();
+$pasajeroUno->cargar("Carmen","Carmín",27797393, 2991231234,$viajeA);
+$pasajeroDos = new Pasajero();
+$pasajeroDos->cargar("Luis", "Lucero", 38868451,2984569871,$viajeB);
+$pasajeroTres = new Pasajero();
+$pasajeroTres->cargar("Isabel", "Velero", 18479361,2991002003,$viajeC);
+$pasajeroCuatro = new Pasajero();
+$pasajeroCuatro->cargar("Laura", "Laurel", 43589741,2995558883 ,$viajeA);
+$pasajeroCinco = new Pasajero();
+$pasajeroCinco->cargar("Pablo", "Clavo", 20341123, 2985156669, $viajeA);
+
+$pasajeroUno->insertar();
+$pasajeroDos->insertar();
+$pasajeroTres->insertar();
+$pasajeroCuatro->insertar();
+$pasajeroCinco->insertar();
+
+$relacionA = new ViajePasajero();
+$relacionA->cargar($viajeA,$pasajeroUno);
+$relacionB = new ViajePasajero();
+$relacionB->cargar($viajeB,$pasajeroDos);
+$relacionC = new ViajePasajero();
+$relacionC->cargar($viajeC, $pasajeroTres);
+$relacionD = new ViajePasajero();
+$relacionD->cargar($viajeD, $pasajeroCuatro);
+
+$relacionA->insertar();
+$relacionB->insertar();
+$relacionC->insertar();
+$relacionD->insertar();
+*/
+do{
+    
+    mostrarMenu();
+    $opcion = trim(fgets(STDIN));
+    switch($opcion){
+        
+        case 1:
+        
+            echo "Ingrese el nombre de la empresa: \n";
+            $nombreE = trim(fgets(STDIN));
+            echo "Ingrese la direccion de la empresa: \n";
+            $direccionE = trim(fgets(STDIN));
+            $nuevaEmpresa = new Empresa();
+            $nuevaEmpresa->cargar($nombreE, $direccionE);
+            if($nuevaEmpresa->insertar()){
+                echo "La empresa a sido registrada con exito. \n";
+            }else{
+                echo $nuevaEmpresa->getMensajeOperacion() . "\n";
             }
-        } elseif ($opcion == 2) {
-            // Modificación de empresa
-            $objEmpresa = new Empresa();
-            echo "Ingrese ID de la empresa a modificar: ";
-            $id = trim(fgets(STDIN));
-            if ($objEmpresa->Buscar($id)) {
-                echo "Nombre actual: " . $objEmpresa->getEnombre() . "\nNuevo nombre: ";
-                $nombre = trim(fgets(STDIN));
-                echo "Dirección actual: " . $objEmpresa->getEdireccion() . "\nNueva dirección: ";
-                $direccion = trim(fgets(STDIN));
-                $objEmpresa->cargar($id, $nombre, $direccion);
-                if ($objEmpresa->modificar()) {
-                    echo "Empresa modificada correctamente.\n";
-                } else {
-                    echo "ERROR: " . $objEmpresa->getMensajeoperacion() . "\n";
+        break;
+        
+        case 2:
+        
+            echo "Ingrese el id de la empresa cuyos datos desea modificar: \n";
+            $idE = trim(fgets(STDIN));
+            $empresa = new Empresa();
+            if($empresa->buscar($idE)){
+                echo "La empresa existe en el sistema. Ingrese los nuevos datos. \n";
+                echo "Nuevo nombre: \n";
+                $nuevoNombre = trim(fgets(STDIN));
+                echo "Nueva direccion: \n";
+                $nuevaDireccion = trim(fgets(STDIN));
+                $empresa->setNombre($nuevoNombre);
+                $empresa->setDireccion($nuevaDireccion);
+                $empresa->modificar();
+                echo "Los datos de la Empresa fueron modificados con exito.\n";
+            }else{
+                echo $empresa->getMensajeOperacion() . "\n";
+            }
+        break;
+        
+        case 3:
+        
+            echo "Ingrese el id de la empresa cuyos datos desea eliminar: \n";
+            $idE = trim(fgets(STDIN));
+            $empresa = new Empresa();
+            if($empresa->buscar($idE)){
+                $viaje=new Viaje();
+                $viajes = $viaje->listar();
+                $i=0;
+                $viajeAsociado=false;
+                
+                while ($i < count($viajes) && !$viajeAsociado) {
+                    $unaEmpresa = $viajes[$i]->getEmpresa();
+                    $idEmpresa=$unaEmpresa->getIdEmpresa();
+                    if ($idEmpresa == $idE) {
+                        $viajeAsociado=true;
+                    }
+                    $i++;
                 }
-            } else {
-                echo "Empresa no encontrada.\n";
-            }
-        } elseif ($opcion == 3) {
-            // Eliminación de empresa
-            $objEmpresa = new Empresa();
-            echo "Ingrese ID de la empresa a eliminar: ";
-            $id = trim(fgets(STDIN));
-            if ($objEmpresa->Buscar($id)) {
-                if ($objEmpresa->eliminar()) {
-                    echo "Empresa eliminada correctamente.\n";
-                } else {
-                    echo "Error: " . $objEmpresa->getMensajeoperacion() . "\n";
-                }
-            } else {
-                echo "Empresa no encontrada.\n";
-            }
-        } else {
-            echo "Opción inválida.\n";
-        }
-    }
-
-    // Gestión de responsables (alta, modificación y baja)
-    public function gestionarResponsable() {
-        echo "\n+================================+\n" .
-             "|    Gestionar de Responsables   |\n" .
-             "¦================================¦\n" .
-             "|1.- Ingresar nuevo responsable  |\n" .
-             "|2.- Modificar responsable       |\n" .
-             "|3.- Eliminar responsable        |\n" .
-             "|Seleccione una opción: ";
-
-        $opcion = trim(fgets(STDIN));
-
-        if ($opcion == 1) {
-            $objResponsable = new ResponsableV();
-            echo "Nombre: ";
-            $nombre = trim(fgets(STDIN));
-            echo "Apellido: ";
-            $apellido = trim(fgets(STDIN));
-            echo "Número de licencia: ";
-            $numLicencia = trim(fgets(STDIN));
-            $objResponsable->cargarResponsable($nombre, $apellido, 0, $numLicencia);
-            if ($objResponsable->insertar()) {
-                echo "Responsable ingresado con éxito. Número de empleado asignado: " . $objResponsable->getRnumeroempleado() . "\n";
-            } else {
-                echo "Error: " . $objResponsable->getMensajeoperacion() . "\n";
-            }
-        } elseif ($opcion == 2) {
-            echo "Número de empleado a modificar: ";
-            $numEmpleado = trim(fgets(STDIN));
-            $objResponsable = ResponsableV::Buscar($numEmpleado);
-            if ($objResponsable) {
-                echo "Número de licencia actual: " . $objResponsable->getRnumerolicencia() . "\nNuevo número: ";
-                $numLicencia = trim(fgets(STDIN));
-                echo "Nombre actual: " . $objResponsable->getNombre() . "\nNuevo nombre: ";
-                $nombre = trim(fgets(STDIN));
-                echo "Apellido actual: " . $objResponsable->getApellido() . "\nNuevo apellido: ";
-                $apellido = trim(fgets(STDIN));
-                $objResponsable->cargarResponsable($nombre, $apellido, $numEmpleado, $numLicencia);
-                if ($objResponsable->modificar()) {
-                    echo "Responsable modificado con éxito.\n";
-                } else {
-                    echo "Error: " . $objResponsable->getMensajeoperacion() . "\n";
-                }
-            } else {
-                echo "Responsable no encontrado.\n";
-            }
-        } elseif ($opcion == 3) {
-            echo "Número de empleado a eliminar: ";
-            $numEmpleado = trim(fgets(STDIN));
-            $objResponsable = ResponsableV::Buscar($numEmpleado);
-            if ($objResponsable) {
-                if ($objResponsable->eliminar()) {
-                    echo "Responsable eliminado con éxito.\n";
-                } else {
-                    echo "Error: " . $objResponsable->getMensajeoperacion() . "\n";
-                }
-            } else {
-                echo "Responsable no encontrado.\n";
-            }
-        } else {
-            echo "Opción inválida.\n";
-        }
-    }
-
-    // Gestión de viajes (alta, modificación y baja)
-    public function gestionarViaje() {
-        echo "\n+================================+\n" .
-             "|       Gestionar   Viajes       |\n" .
-             "¦================================¦\n" .
-             "|1. Ingresar nuevo viaje         |\n" .
-             "|2. Modificar viaje existente    |\n" .
-             "|3. Eliminar viaje               |\n" .
-             "|Seleccione una opción: ";
-
-        $opcion = trim(fgets(STDIN));
-
-        if ($opcion == 1) {
-            $objViaje = new Viaje();
-            echo "Destino: ";
-            $destino = trim(fgets(STDIN));
-            echo "Cantidad máxima de pasajeros: ";
-            $cantMax = trim(fgets(STDIN));
-            echo "Costo del viaje: ";
-            $costo = trim(fgets(STDIN));
-            echo "ID de la empresa: ";
-            $idEmpresa = trim(fgets(STDIN));
-            echo "Número de empleado responsable: ";
-            $nroResponsable = trim(fgets(STDIN));
-
-            $objEmpresa = new Empresa();
-            $objResponsable = ResponsableV::Buscar($nroResponsable);
-
-            if (!$objEmpresa->Buscar($idEmpresa)) {
-                echo "Empresa no encontrada.\n";
-            } elseif (!$objResponsable) {
-                echo "Responsable no encontrado.\n";
-            } else {
-                $objViaje->cargar(0, $destino, $cantMax, $objEmpresa->getIdempresa(), $objResponsable, $costo);
-                if ($objViaje->insertar()) {
-                    echo "Viaje ingresado con éxito. ID: " . $objViaje->getIdviaje() . "\n";
-                } else {
-                    echo "Error: " . $objViaje->getMensajeoperacion() . "\n";
-                }
-            }
-
-        } elseif ($opcion == 2) {
-            echo "ID del viaje a modificar: ";
-            $idViaje = trim(fgets(STDIN));
-            $objViaje = new Viaje();
-            if ($objViaje->Buscar($idViaje)) {
-                echo "Destino actual: " . $objViaje->getVdestino() . "\nNuevo destino: ";
-                $destino = trim(fgets(STDIN));
-                echo "Cantidad máxima actual: " . $objViaje->getVcantmaxpasajeros() . "\nNueva cantidad: ";
-                $cantMax = trim(fgets(STDIN));
-                echo "Costo actual: " . $objViaje->getVimporte() . "\nNuevo costo: ";
-                $costo = trim(fgets(STDIN));
-                echo "ID nueva empresa: ";
-                $idEmpresa = trim(fgets(STDIN));
-                echo "Nuevo número de responsable: ";
-                $nroResponsable = trim(fgets(STDIN));
-
-                $objEmpresa = new Empresa();
-                $objResponsable = ResponsableV::Buscar($nroResponsable);
-
-                if (!$objEmpresa->Buscar($idEmpresa)) {
-                    echo "Empresa no encontrada.\n";
-                } elseif (!$objResponsable) {
-                    echo "Responsable no encontrado.\n";
-                } else {
-                    $objViaje->cargar($idViaje, $destino, $cantMax, $objEmpresa->getIdempresa(), $objResponsable, $costo);
-                    if ($objViaje->modificar()) {
-                        echo "Viaje modificado con éxito.\n";
-                    } else {
-                        echo "Error: " . $objViaje->getMensajeoperacion() . "\n";
+                if ($viajeAsociado) {
+                    echo "No se puede eliminar la empresa porque tiene viajes asociados.\n";
+                }else {
+                    if($empresa->eliminar()){
+                        echo "La empresa fue eliminada de la BD con éxito. \n";
+                    }else{
+                        echo $empresa->getMensajeOperacion() . "\n";
                     }
                 }
-            } else {
-                echo "Viaje no encontrado.\n";
+            }else{
+                echo $empresa->getMensajeOperacion() . "\n";
             }
+        break;
+   
+        case 4:
+            
+            echo "Ingrese el destino del viaje: \n";
+            $destinoV = trim(fgets(STDIN));
+            echo "Ingrese la capacidad máxima de pasajeros: \n";
+            $cantMaxP = trim(fgets(STDIN));
+            echo "Ingrese el importe: \n";
+            $importeV = trim(fgets(STDIN));
+            do{
+            echo "Ingrese el id de la empresa que proporciona el viaje: \n";
+            $idE = trim(fgets(STDIN));
+            $empresa = new Empresa();
+        
+            if($empresa->buscar($idE)){
+                $seguir = true;
+            }else{
+                echo "La empresa que menciona no existe en la BD, intente otra vez. \n";
+                $seguir = false;
+            }
+                
+            }while(!$seguir);
+            
+            do{
+            echo "Ingrese el id del Responsable del viaje: \n";
+            $idR = trim(fgets(STDIN));
+            $responsable = new Responsable();
+    
+            if($responsable->buscar($idR)){
+                $seguir = true;
+            }else{
+                echo "El responsable que menciona no existe en la BD, intente otra vez \n";
+                $seguir = false;
+            }
+            
+            }while(!$seguir);
+            
+            $viaje = new Viaje();
+            $viaje->cargar($destinoV,$cantMaxP,$empresa,$responsable,$importeV);
+            if($viaje->insertar()){
+                echo "El viaje ha sido registrado con exito \n";
+            }else{
+                echo $viaje->getMensajeOperacion();
+            }
+        break;
+        
+        case 5:
 
-        } elseif ($opcion == 3) {
-            echo "ID del viaje a eliminar: ";
-            $idViaje = trim(fgets(STDIN));
-            $objViaje = new Viaje();
-            if ($objViaje->Buscar($idViaje)) {
-                if ($objViaje->eliminar()) {
-                    echo "Viaje eliminado con éxito.\n";
-                } else {
-                    echo "Error: " . $objViaje->getMensajeoperacion() . "\n";
+            echo "Ingrese el id del viaje cuyos datos quiere modificar: \n";
+            $idV = trim(fgets(STDIN));
+            $viaje = new Viaje();
+
+            if($viaje->buscar($idV)){
+                echo "El viaje existe en la BD, ingrese los nuevos datos. \n";
+                echo "Ingrese el destino: \n";
+                $destinoV = trim(fgets(STDIN));
+                echo "Ingrese la cantidad maxima de pasajeros: \n";
+                $cantMaxP = trim(fgets(STDIN));
+                echo "Ingrese el importe: \n";
+                $importeV = trim(fgets(STDIN));
+              
+                do{
+                    echo "Ingrese el id del Responsable del viaje: \n";
+                    $idR = trim(fgets(STDIN));
+                    $responsable = new Responsable();
+    
+                if($responsable->buscar($idR)){
+                    $seguir = true;
+                }else{
+                    echo "El responsable que menciona no existe en la BD, intente otra vez \n";
+                    $seguir = false;
                 }
-            } else {
-                echo "Viaje no encontrado.\n";
+                }while(!$seguir);   
+                
+                do{
+                echo "Ingrese el id de la empresa que proporciona el viaje: \n";
+                $idE = trim(fgets(STDIN));
+                $empresa = new Empresa();
+            
+                if($empresa->buscar($idE)){
+                    $seguir = true;
+                }else{
+                    echo "La empresa que menciona no existe en la BD, intente otra vez. \n";
+                    $seguir = false;
+                }
+                }while(!$seguir);
+
+                $viaje->setDestino($destinoV);
+                $viaje->setCantMaxPasajeros($cantMaxP);
+                $viaje->setImporte($importeV);
+                $viaje->setEmpresa($empresa);
+                $viaje->setResponsable($responsable);
+                if($viaje->modificar()){
+                    echo "Los datos fueron modificados con éxito. \n";
+                }else{
+                    echo $viaje->getMensajeOperacion() . "\n";
+                }
+                    
+            }else{
+                echo $viaje->getMensajeOperacion();
             }
+        break;
+        
+        case 6:
+            echo "Ingrese el id del viaje cuyos datos desea eliminar: \n";
+            $idV = trim(fgets(STDIN));
+            $viaje = new Viaje();
+            if($viaje->buscar($idV)){
+                $viajePasajero=new ViajePasajero();
+                $lista=$viajePasajero->listar("viaje",$idV);
+                if (count($lista) > 0) {
+                    echo "No se puede eliminar porque el viaje tiene pasajeros asociados.";
+                }else {
+                    if ($viaje->eliminar()) {
+                        echo "Viaje eliminado con exito.\n";
+                    }else {
+                        echo $viaje->getMensajeOperacion().".\n";
+                    }
+                }
+            }else {
+                echo $viaje->getMensajeOperacion().".\n";
+            }
+        break;
+
+         case 7:
+      echo "Ingrese el documento del pasajero\n";
+      $documentoP = trim(fgets(STDIN));
+      echo "Ingrese el nombre del pasajero\n";
+      $nombreP = trim(fgets(STDIN));
+      echo "Ingrese el apellido del pasajero\n";
+      $apellidoP = trim(fgets(STDIN));
+      echo "Ingrese el telefono del pasajero\n";
+      $telefonoP = trim(fgets(STDIN));
+
+      $seguir = false; // inicializa correctamente
+      $pasajeroP = new Pasajero();
+
+      do {
+        echo "Ingrese el id del viaje que quiere realizar\n";
+        $idViajeP = trim(fgets(STDIN));
+        $viajeP = new Viaje();
+
+        if ($viajeP->buscar($idViajeP)) {
+          $seguir = true;
         } else {
-            echo "Opción inválida.\n";
+          echo "El viaje de id: $idViajeP no existe, pruebe de nuevo\n";
         }
+      } while(!$seguir);
+
+      // validez ok, ahora cargo datos
+      $pasajeroP->cargar($documentoP, $nombreP, $apellidoP, $telefonoP);
+
+      if ($pasajeroP->insertar()) {
+        $relacion = new ViajePasajero();
+        $relacion->cargar($viajeP, $pasajeroP);
+        if ($relacion->insertar()) {
+          echo "El pasajero ha sido insertado con exito\n";
+        } else {
+          echo $relacion->getMensajeOperacion() . "\n";
+        }
+      } else {
+        echo $pasajeroP->getMensajeOperacion() . "\n";
+      }
+      break;
+
+        case 8:
+            
+            echo "Ingrese el id del pasajero cuyos datos desea modificar: \n";
+            $idP = trim(fgets(STDIN));
+            $pasajero = new Pasajero();
+            if($pasajero->buscar($idP)){
+                echo "El pasajero existe en el sistema. Ingrese los nuevos datos. \n";
+                echo "Nuevo nombre: \n";
+                $nuevoNombre = trim(fgets(STDIN));
+                echo "Nuevo documento: \n";
+                $nuevoDocumento = trim(fgets(STDIN));
+                echo "Nuevo apellido: \n";
+                $nuevoApellido = trim(fgets(STDIN));
+                echo "Nuevo telefono: \n";
+                $nuevoTelefono = trim(fgets(STDIN));
+                $pasajero->setNombre($nuevoNombre);
+                $pasajero->setNumeroDocumento($nuevoDocumento);
+                $pasajero->setApellido($nuevoApellido);
+                $pasajero->setTelefono($nuevoTelefono);
+                $pasajero->modificar();
+            }else{
+                echo $pasajero->getMensajeOperacion() . "\n";
+            }
+
+        break;
+
+        case 9:
+            
+            echo "Ingrese el id del pasajero cuyos datos desea eliminar: \n";
+            $idP = trim(fgets(STDIN));
+            $pasajero = new Pasajero();
+            if($pasajero->buscar($idP)){
+                $viajePasajero = new ViajePasajero();
+                $lista = $viajePasajero->listar("pasajero",$idP);
+                if (count($lista) > 0) {
+                    echo "El pasajero tiene viajes asociados. Desea eliminarlo igual?(si/no): ";
+                    $resp=strtolower(trim(fgets(STDIN)));
+                    if ($resp=="si") {
+                        foreach ($lista as $unRegistro) {
+                            $unRegistro->eliminar();
+                        }
+                        
+                        if($pasajero->eliminar()){
+                            echo "El pasajero fue eliminado con éxito.\n";
+                        }else{
+                            echo $pasajero->getMensajeOperacion()."\n";
+                        }
+                    }else {
+                        echo "Eliminacion cancelada.\n";
+                    }
+                }else {
+                    if($pasajero->eliminar()){
+                        echo "El pasajero fue eliminado con éxito.\n";
+                    }else{
+                        echo $pasajero->getMensajeOperacion()."\n";
+                    }
+                }
+            }else{
+                echo $pasajero->getMensajeOperacion()."\n";
+            }
+
+        break;    
+        
+        case 10:
+
+            echo "Ingrese el numero de licencia del Responsable \n";
+            $numLicenciaR = trim(fgets(STDIN));
+            echo "Ingrese el nombre del responsable \n";
+            $nombreR = trim(fgets(STDIN));
+            echo "Ingrese el apellido del responsable \n";
+            $apellidoR = trim(fgets(STDIN));
+            $responsableR = new Responsable();
+            $responsableR->inicializarResponsable($numLicenciaR, $nombreR, $apellidoR);
+
+            
+            if($responsableR->insertar()){
+                echo "El responsable ha sido insertado con exito \n";
+            }else{
+                echo $responsableR->getMensajeOperacion();
+            }
+        break;
+
+        case 11:
+      echo "Ingrese el id del responsable cuyos datos desea modificar:\n";
+      $idR = trim(fgets(STDIN));
+      $responsableR = new Responsable();
+      if ($responsableR->buscar($idR)) {
+        echo "Ingrese el nuevo nombre:\n";
+        $nuevoNombre = trim(fgets(STDIN));
+        echo "Ingrese la nueva licencia:\n";
+        $nuevaLicencia = trim(fgets(STDIN));
+        echo "Ingrese el nuevo apellido:\n";
+        $nuevoApellido = trim(fgets(STDIN));
+        $responsableR->setNombre($nuevoNombre);
+        $responsableR->setNumeroLicencia($nuevaLicencia);
+        $responsableR->setApellido($nuevoApellido);
+        $responsableR->modificar();
+        echo "Responsable modificado con éxito.\n";
+      } else {
+        echo $responsableR->getMensajeOperacion() . "\n";
+      }
+      break;
+
+        case 12:
+            
+            echo "Ingrese el id del responsable cuyos datos desea eliminar: \n";
+            $idR = trim(fgets(STDIN));
+            $responsableR = new Responsable();
+            if($responsableR->buscar($idR)){
+                $viaje=new Viaje();
+                $lista=$viaje->listar();
+                $viajeAsociado=false;
+                $i=0;
+                while ($i < count($lista) && !$viajeAsociado) {
+                    $idResponsable=$lista[$i]->getResponsable()->getNumeroEmpleado();
+                    if ($idResponsable==$idR) {
+                        $viajeAsociado=true;
+                    }
+                    $i++;
+                }
+                if ($viajeAsociado) {
+                    echo "El responsable no se puede eliminar porque tiene viajes asociados.";
+                }else {
+                    if($responsableR->eliminar()){
+                        echo "El responsable fue eliminado de la BD con éxito. \n";
+                    }else{
+                        echo $responsableR->getMensajeOperacion() . "\n";
+                    }
+                }
+            }else{
+                echo $responsableR->getMensajeOperacion() . "\n";
+            }
+
+        break;
+        
+
+
+
+
     }
+}while($opcion != 0 && $opcion != 13);
+
+function mostrarMenu(){
+    
+    echo "\n *-------------------------------------------------* \n";
+    echo "1) Ingresar datos de una nueva Empresa. \n";
+    echo "2) Modificar datos de una Empresa existente. \n";
+    echo "3) Eliminar los datos de una Empresa existente. \n";
+    echo "*-------------------------------------------------* \n";
+    echo "4) Ingresar datos de un nuevo Viaje. \n";
+    echo "5) Modificar datos de un Viaje existente. \n";
+    echo "6) Eliminar los datos de un Viaje existente. \n";
+    echo "*-------------------------------------------------* \n";
+    echo "7) Ingresar datos de un nuevo Pasajero. \n";
+    echo "8) Modificar datos de un Pasajero existente. \n";
+    echo "9) Eliminar los datos de un Pasajero existente. \n";
+    echo "*-------------------------------------------------* \n";
+    echo "10) Ingresar datos de un nuevo Responsable. \n";
+    echo "11) Modificar datos de un Responsable existente. \n";
+    echo "12) Eliminar los datos de un Responsable existente. \n";
+    echo "13) Salir.\n";
+    echo "*-------------------------------------------------* \n";
+
 }
-
-// Menú principal del sistema
-$objTest = new TestViaje();
-
-do {
-    echo "\n+================================+\n" .
-         "|         MENU PRINCIPAL         |\n" .
-         "¦================================¦\n" .
-         "|1.- Gestión de Empresas         |\n" .
-         "|2.- Gestión de Responsables     |\n" .
-         "|3.- Gestión de Viajes           |\n" .
-         "|0.- Salir                       |\n" .
-         "¦================================|\n" .
-         "|Seleccione una opción: ";
-
-    $opcion = trim(fgets(STDIN));
-
-    if ($opcion == 1) {
-        $objTest->gestionarEmpresa();
-    } elseif ($opcion == 2) {
-        $objTest->gestionarResponsable();
-    } elseif ($opcion == 3) {
-        $objTest->gestionarViaje();
-    } elseif ($opcion == 0) {
-        echo "Saliendo.\n";
-    } else {
-        echo "Opción inválida.\n";
-    }
-} while ($opcion != 0);
-?>

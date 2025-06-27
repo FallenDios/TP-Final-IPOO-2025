@@ -1,66 +1,122 @@
-<?php
-// Clase BaseDatos: encapsula la conexión y operaciones básicas con una base de datos MySQL
+﻿<?php
+
 class BaseDatos {
-    // Atributos privados para almacenar los parámetros de conexión y el enlace
-    private $conexion;
-    private $base;
-    private $usuario;
-    private $clave;
-    private $host;
-
-    // inicializa los parámetros de conexión a la base de datos
-    public function __construct() {
-        $this->base = "bdviajes";    // Nombre de la base de datos
-        $this->usuario = "root";     // Usuario de acceso
-        $this->clave = "";           // Clave del usuario (vacía por defecto)
-        $this->host = "localhost";   // Servidor de la base de datos
+    private $HOSTNAME;
+    private $BASEDATOS;
+    private $USUARIO;
+    private $CLAVE;
+    private $CONEXION;
+    private $QUERY;
+    private $RESULT;
+    private $ERROR;
+    /**
+     * Constructor de la clase que inicia ls variables instancias de la clase
+     * vinculadas a la coneccion con el Servidor de BD
+     */
+    public function __construct(){
+        $this->HOSTNAME = "localhost";
+        $this->BASEDATOS = "bdviajes";
+        $this->USUARIO = "root";
+        $this->CLAVE="";
+        $this->RESULT=0;
+        $this->QUERY="";
+        $this->ERROR="";
     }
-
-    // Iniciar: intenta establecer la conexión con la base de datos
-    // Retorna true si la conexión fue exitosa, false en caso contrario
-    public function Iniciar() {
-        $exito = false;
-        $conexion = mysqli_connect($this->host, $this->usuario, $this->clave, $this->base);
-        if ($conexion) {
-            $this->conexion = $conexion;
-            $exito = true;
-        }
-        return $exito;
+    /**
+     * Funcion que retorna una cadena
+     * con una pequeña descripcion del error si lo hubiera
+     *
+     * @return string
+     */
+    public function getError(){
+        return "\n".$this->ERROR;
+        
     }
-
-    // Ejecutar: ejecuta una consulta SQL (INSERT, UPDATE o DELETE)
-    // Retorna el resultado de la ejecución o false si falla
-    public function Ejecutar($consulta) {
-        $resp = false;
-        if ($this->conexion) {
-            $resp = mysqli_query($this->conexion, $consulta);
+    
+    /**
+     * Inicia la coneccion con el Servidor y la  Base Datos Mysql.
+     * Retorna true si la coneccion con el servidor se pudo establecer y false en caso contrario
+     *
+     * @return boolean
+     */
+    public  function Iniciar(){
+        $resp  = false;
+        $conexion = mysqli_connect($this->HOSTNAME,$this->USUARIO,$this->CLAVE,$this->BASEDATOS);
+        if ($conexion){
+            if (mysqli_select_db($conexion,$this->BASEDATOS)){
+                $this->CONEXION = $conexion;
+                unset($this->QUERY);
+                unset($this->ERROR);
+                $resp = true;
+            }  else {
+                $this->ERROR = mysqli_errno($conexion) . ": " .mysqli_error($conexion);
+            }
+        }else{
+            $this->ERROR =  mysqli_connect_errno() . ": " .mysqli_connect_errno();
         }
         return $resp;
     }
-
-    // Registro: ejecuta una consulta SELECT y retorna el resultado
-    // Retorna el resultado del mysqli_query para ser recorrido posteriormente
-    public function Registro($consulta) {
-        $resultado = false;
-        if ($this->conexion) {
-            $resultado = mysqli_query($this->conexion, $consulta);
+    
+    /**
+     * Ejecuta una consulta en la Base de Datos.
+     * Recibe la consulta en una cadena enviada por parametro.
+     *
+     * @param string $consulta
+     * @return boolean
+     */
+    public function Ejecutar($consulta){
+        $resp  = false;
+        unset($this->ERROR);
+        $this->QUERY = $consulta;
+        if(  $this->RESULT = mysqli_query( $this->CONEXION,$consulta)){
+            $resp = true;
+        } else {
+            $this->ERROR =mysqli_errno( $this->CONEXION).": ". mysqli_error( $this->CONEXION);
         }
-        return $resultado;
+        return $resp;
     }
-
-    // devuelveIDInsercion: retorna el ID generado por una inserción con autoincrement
-    public function devuelveIDInsercion() {
-        $id = null;
-        if ($this->conexion) {
-            $id = mysqli_insert_id($this->conexion);
+    
+    /**
+     * Devuelve un registro retornado por la ejecucion de una consulta
+     * el puntero se despleza al siguiente registro de la consulta
+     *
+     * @return boolean
+     */
+    public function Registro() {
+        $resp = null;
+        if ($this->RESULT instanceof mysqli_result){
+            unset($this->ERROR);
+            if($temp = mysqli_fetch_assoc($this->RESULT)){
+                $resp = $temp;
+            }else{
+                mysqli_free_result($this->RESULT);
+            }
+        }else{
+            $this->ERROR = mysqli_errno($this->CONEXION) . ": " . mysqli_error($this->CONEXION);
         }
-        return $id;
+        return $resp ;
     }
-
-
-    // Devuelve el último error de la conexión
-public function getError() {
-    return mysqli_error($this->conexion);
-}
+    
+    /**
+     * Devuelve el id de un campo autoincrement utilizado como clave de una tabla
+     * Retorna el id numerico del registro insertado, devuelve null en caso que la ejecucion de la consulta falle
+     *
+     * @param string $consulta
+     * @return int id de la  insertada
+     */
+    public function devuelveIDInsercion($consulta){
+        $resp = null;
+        unset($this->ERROR);
+        $this->QUERY = $consulta;
+        if ($this->RESULT = mysqli_query($this->CONEXION,$consulta)){
+            $id = mysqli_insert_id($this->CONEXION);
+            $resp =  $id;
+        } else {
+            $this->ERROR =mysqli_errno( $this->CONEXION) . ": " . mysqli_error( $this->CONEXION);
+           
+        }
+    return $resp;
+    }
+    
 }
 ?>
