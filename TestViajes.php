@@ -5,79 +5,7 @@ include_once 'Responsable.php';
 include_once 'Pasajero.php';
 include_once 'Viaje.php';
 include_once 'ViajePasajero.php';
-/*
-$empresaV = new Empresa();
-$empresaV->cargar("Empresa Vuelo", "San Martin 123");
-$empresaA = new Empresa();
-$empresaA->cargar("Empresa Aterrizaje", "Mitre 456");
 
-$empresaV->insertar();
-$empresaA->insertar();
-
-$responsableUno = new Responsable();
-$responsableUno->cargar(1,"Juan", "Juanales");
-
-$responsableDos = new Responsable();
-$responsableDos->cargar(2,"Martina","Martinez");
-
-$responsableTres = new Responsable();
-$responsableTres->cargar(3,"Pedro", "Piedrita");
-
-$responsableUno->insertar();
-$responsableDos->insertar();
-$responsableTres->insertar();
-
-$viajeA = new Viaje();
-$viajeA->cargar("Seychelles", 3, $empresaV, $responsableUno,150000);
-$viajeB = new Viaje();
-$viajeB->cargar("Bahamas",100,$empresaV, $responsableUno, 130000);
-$viajeC = new Viaje();
-$viajeC->cargar("Manila",90,$empresaV,$responsableDos, 165000);
-$viajeD = new Viaje();
-$viajeD->cargar("Buenos Aires", 95, $empresaA, $responsableTres, 85000);
-$viajeE = new Viaje();
-$viajeE->cargar("Neuquen", 70, $empresaA, $responsableTres, 60000);
-$viajeF = new Viaje();
-$viajeF->cargar("Ushuaia", 65, $empresaA, $responsableTres, 70000);
-
-$viajeA->insertar();
-$viajeB->insertar();
-$viajeC->insertar();
-$viajeD->insertar();
-$viajeE->insertar();
-$viajeF->insertar();
-
-$pasajeroUno = new Pasajero();
-$pasajeroUno->cargar("Carmen","Carmín",27797393, 2991231234,$viajeA);
-$pasajeroDos = new Pasajero();
-$pasajeroDos->cargar("Luis", "Lucero", 38868451,2984569871,$viajeB);
-$pasajeroTres = new Pasajero();
-$pasajeroTres->cargar("Isabel", "Velero", 18479361,2991002003,$viajeC);
-$pasajeroCuatro = new Pasajero();
-$pasajeroCuatro->cargar("Laura", "Laurel", 43589741,2995558883 ,$viajeA);
-$pasajeroCinco = new Pasajero();
-$pasajeroCinco->cargar("Pablo", "Clavo", 20341123, 2985156669, $viajeA);
-
-$pasajeroUno->insertar();
-$pasajeroDos->insertar();
-$pasajeroTres->insertar();
-$pasajeroCuatro->insertar();
-$pasajeroCinco->insertar();
-
-$relacionA = new ViajePasajero();
-$relacionA->cargar($viajeA,$pasajeroUno);
-$relacionB = new ViajePasajero();
-$relacionB->cargar($viajeB,$pasajeroDos);
-$relacionC = new ViajePasajero();
-$relacionC->cargar($viajeC, $pasajeroTres);
-$relacionD = new ViajePasajero();
-$relacionD->cargar($viajeD, $pasajeroCuatro);
-
-$relacionA->insertar();
-$relacionB->insertar();
-$relacionC->insertar();
-$relacionD->insertar();
-*/
 do{
     
     mostrarMenu();
@@ -301,7 +229,9 @@ do{
       } while(!$seguir);
 
       // validez ok, ahora cargo datos
-      $pasajeroP->cargar($documentoP, $nombreP, $apellidoP, $telefonoP);
+      $pasajeroP->inicializarPasajero($documentoP, $nombreP, $apellidoP, $telefonoP);
+
+
 
       if ($pasajeroP->insertar()) {
         $relacion = new ViajePasajero();

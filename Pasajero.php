@@ -1,174 +1,210 @@
 <?php
-include_once "BaseDatos.php"; // Se incluye la clase que maneja la conexión a la base de datos
 
-class Pasajero {
-    // Atributos privados
+include_once "BaseDatos.php";
+include_once "Persona.php";
+
+class Pasajero extends Persona {
+    // Atributos privados propios de Pasajero
     private $idPasajero;
     private $documento;
-    private $nombre;
-    private $apellido;
     private $telefono;
     private $mensajeOperacion;
 
-    // Constructor: inicializa los atributos con valores por defecto
+    // Constructor: inicializa atributos y llama al constructor de Persona
     public function __construct() {
+        parent::__construct();
         $this->idPasajero = 0;
-        $this->nombre = "";
-        $this->apellido = "";
         $this->documento = "";
         $this->telefono = "";
         $this->mensajeOperacion = "";
     }
 
-    // Método para cargar valores usando métodos set
-    public function cargar($unDocumento, $unNombre, $unApellido, $unTelefono) {
-        $this->setNumeroDocumento($unDocumento);
-        $this->setNombre($unNombre);
-        $this->setApellido($unApellido);
-        $this->setTelefono($unTelefono);
+    // Inicializa los datos específicos del pasajero
+    public function inicializarPasajero($documento, $nombre, $apellido, $telefono) {
+        $this->setNumeroDocumento($documento);
+        $this->setTelefono($telefono);
+        parent::cargar($nombre, $apellido); // Inicializa nombre y apellido desde Persona
     }
 
-    // Métodos de acceso (getters)
+    // Getters
     public function getIdPasajero() { return $this->idPasajero; }
-    public function getNombre() { return $this->nombre; }
-    public function getApellido() { return $this->apellido; }
     public function getNumeroDocumento() { return $this->documento; }
     public function getTelefono() { return $this->telefono; }
     public function getMensajeOperacion() { return $this->mensajeOperacion; }
 
-    // Métodos de modificación (setters)
+    // Setters
     public function setIdPasajero($idPasajero) { $this->idPasajero = $idPasajero; }
-    public function setNombre($nombre) { $this->nombre = $nombre; }
-    public function setApellido($apellido) { $this->apellido = $apellido; }
-    public function setNumeroDocumento($numeroDocumento) { $this->documento = $numeroDocumento; }
+    public function setNumeroDocumento($documento) { $this->documento = $documento; }
     public function setTelefono($telefono) { $this->telefono = $telefono; }
-    public function setMensajeOperacion($mensajeOperacion) { $this->mensajeOperacion = $mensajeOperacion; }
+    public function setMensajeOperacion($mensaje) { $this->mensajeOperacion = $mensaje; }
 
-    // Método mágico __toString que devuelve una representación textual del objeto
+    // Representación del objeto como string
     public function __toString() {
-        return
-        "ID Pasajero: " . $this->getIdPasajero() . "\n" .
-        "Nombre: " . $this->getNombre() . "\n" .
-        "Apellido: " . $this->getApellido() . "\n" .
-        "Numero de Documento: " . $this->getNumeroDocumento() . "\n" .
-        "Telefono: " . $this->getTelefono() . "\n";
+        return "ID Pasajero: " . $this->getIdPasajero() . "\n" .
+               "Documento: " . $this->getNumeroDocumento() . "\n" .
+               "Telefono: " . $this->getTelefono() . "\n" .
+               parent::__toString(); // Muestra nombre y apellido
     }
 
-    // Método que busca un pasajero por ID en la base de datos
+    // Busca pasajero por su ID
     public function buscar($idPasajero) {
-        $baseDatos = new BaseDatos();
+        $base = new BaseDatos();
         $respuesta = false;
-        $consulta = "SELECT * FROM pasajero WHERE idpasajero = " . $idPasajero;
+        $consulta = "SELECT pa.*, pe.nombre, pe.apellido ".
+                    "FROM pasajero pa JOIN persona pe ON pa.idpersona = pe.idpersona ".
+                    "WHERE pa.idpasajero = $idPasajero";
 
-        if ($baseDatos->Iniciar()) {
-            if ($baseDatos->Ejecutar($consulta)) {
-                if ($fila = $baseDatos->Registro()) {
-                    // Se cargan los datos al objeto
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($consulta)) {
+                if ($fila = $base->Registro()) {
                     $this->setIdPasajero($fila['idpasajero']);
-                    $this->setNombre($fila['pnombre']);
-                    $this->setApellido($fila['papellido']);
                     $this->setNumeroDocumento($fila['pdocumento']);
                     $this->setTelefono($fila['ptelefono']);
+                    $this->setNombre($fila['nombre']);
+                    $this->setApellido($fila['apellido']);
                     $respuesta = true;
                 } else {
-                    $this->setMensajeOperacion("No existe Pasajero con ese ID.");
+                    $this->setMensajeOperacion("No se encontr\xF3 pasajero.");
                 }
             } else {
-                $this->setMensajeOperacion($baseDatos->getError());
+                $this->setMensajeOperacion($base->getError());
             }
         } else {
-            $this->setMensajeOperacion($baseDatos->getError());
+            $this->setMensajeOperacion($base->getError());
         }
         return $respuesta;
     }
 
-    // Método que inserta un pasajero en la base de datos
+    // Inserta una nueva persona y pasajero
     public function insertar() {
-        $baseDatos = new BaseDatos();
+        $base = new BaseDatos();
         $respuesta = false;
 
-        if ($baseDatos->Iniciar()) {
-            $consultaInsertar = "INSERT INTO pasajero(pdocumento, pnombre, papellido, ptelefono) 
-            VALUES('" . $this->getNumeroDocumento() . "', '" . $this->getNombre() . "', '" . $this->getApellido() . "', " . $this->getTelefono() . ")";
-            $id = $baseDatos->devuelveIDInsercion($consultaInsertar);
+        if ($base->Iniciar()) {
+            $consultaPersona = "INSERT INTO persona(nombre, apellido) ".
+                               "VALUES('" . $this->getNombre() . "', '" . $this->getApellido() . "')";
+            $idPersona = $base->devuelveIDInsercion($consultaPersona);
 
-            if ($id != null) {
-                $this->setIdPasajero($id); // Asigna el ID generado
-                $respuesta = true;
+            if ($idPersona != null) {
+                $consultaPasajero = "INSERT INTO pasajero(pdocumento, ptelefono, idpersona) ".
+                                    "VALUES('" . $this->getNumeroDocumento() . "', '" . $this->getTelefono() . "', $idPersona)";
+                $id = $base->devuelveIDInsercion($consultaPasajero);
+                if ($id != null) {
+                    $this->setIdPasajero($id);
+                    $respuesta = true;
+                } else {
+                    $this->setMensajeOperacion($base->getError());
+                }
             } else {
-                $this->setMensajeOperacion($baseDatos->getError());
+                $this->setMensajeOperacion($base->getError());
             }
         } else {
-            $this->setMensajeOperacion($baseDatos->getError());
+            $this->setMensajeOperacion($base->getError());
         }
         return $respuesta;
     }
 
-    // Método que modifica los datos de un pasajero existente
+    // Modifica datos en ambas tablas
     public function modificar() {
-        $baseDatos = new BaseDatos();
+        $base = new BaseDatos();
         $respuesta = false;
 
-        if ($baseDatos->Iniciar()) {
-            $consultaModificar = "UPDATE pasajero SET pdocumento = '" . $this->getNumeroDocumento() . "', pnombre = '" . $this->getNombre() .
-            "', papellido = '" . $this->getApellido() . "', ptelefono = " . $this->getTelefono() .
-            " WHERE idpasajero = " . $this->getIdPasajero();
+        if ($base->Iniciar()) {
+            $consultaPersona = "UPDATE persona SET nombre = '" . $this->getNombre() .
+                               "', apellido = '" . $this->getApellido() .
+                               "' WHERE idpersona = (SELECT idpersona FROM pasajero WHERE idpasajero = " . $this->getIdPasajero() . ")";
 
-            if ($baseDatos->Ejecutar($consultaModificar)) {
+            $modificoPersona = $base->Ejecutar($consultaPersona);
+
+            $consultaPasajero = "UPDATE pasajero SET pdocumento = '" . $this->getNumeroDocumento() .
+                                 "', ptelefono = '" . $this->getTelefono() .
+                                 "' WHERE idpasajero = " . $this->getIdPasajero();
+
+            $modificoPasajero = $base->Ejecutar($consultaPasajero);
+
+            if ($modificoPersona && $modificoPasajero) {
                 $respuesta = true;
             } else {
-                $this->setMensajeOperacion($baseDatos->getError());
+                $this->setMensajeOperacion($base->getError());
             }
         } else {
-            $this->setMensajeOperacion($baseDatos->getError());
+            $this->setMensajeOperacion($base->getError());
         }
         return $respuesta;
     }
 
-    // Método que elimina un pasajero de la base de datos
-    public function eliminar() {
-        $baseDatos = new BaseDatos();
-        $respuesta = false;
+    // Elimina de ambas tablas
+    // Elimina al pasajero y luego a la persona asociada
+public function eliminar() {
+    $base = new BaseDatos();
+    $respuesta = false;
 
-        if ($baseDatos->Iniciar()) {
-            $consultaEliminar = "DELETE FROM pasajero WHERE idpasajero = " . $this->getIdPasajero();
-            if ($baseDatos->Ejecutar($consultaEliminar)) {
-                $respuesta = true;
-            } else {
-                $this->setMensajeOperacion($baseDatos->getError());
+    if ($base->Iniciar()) {
+        // 1. Eliminar relaciones en viaje_pasajero (si existen)
+        $consultaViajePasajero = "DELETE FROM viaje_pasajero WHERE idpasajero = " . $this->getIdPasajero();
+        $base->Ejecutar($consultaViajePasajero); // No afecta si no hay relaciones
+
+        // 2. Eliminar de la tabla pasajero
+        $consultaPasajero = "DELETE FROM pasajero WHERE idpasajero = " . $this->getIdPasajero();
+        if ($base->Ejecutar($consultaPasajero)) {
+
+            // 3. Finalmente eliminar de la tabla persona
+            $consultaPersona = "DELETE FROM persona WHERE idpersona = (
+                SELECT idpersona FROM pasajero WHERE idpasajero = " . $this->getIdPasajero() . "
+            )";
+
+            // Alternativa: recuperar el idpersona antes, ya que luego de borrar pasajero no existirá
+            $consultaIdPersona = "SELECT idpersona FROM pasajero WHERE idpasajero = " . $this->getIdPasajero();
+            if ($base->Ejecutar($consultaIdPersona)) {
+                if ($fila = $base->Registro()) {
+                    $idPersona = $fila['idpersona'];
+                    $consultaPersona = "DELETE FROM persona WHERE idpersona = $idPersona";
+
+                    if ($base->Ejecutar($consultaPersona)) {
+                        $respuesta = true;
+                    } else {
+                        $this->setMensajeOperacion($base->getError());
+                    }
+                }
             }
+
         } else {
-            $this->setMensajeOperacion($baseDatos->getError());
+            $this->setMensajeOperacion($base->getError());
         }
-        return $respuesta;
+    } else {
+        $this->setMensajeOperacion($base->getError());
     }
 
-    // Método que devuelve un arreglo con todos los pasajeros de la base
+    return $respuesta;
+}
+
+    // Lista todos los pasajeros
     public function listar() {
-        $baseDatos = new BaseDatos();
-        $coleccionPasajeros = [];
-        $consulta = "SELECT * FROM pasajero";
+        $base = new BaseDatos();
+        $coleccion = [];
+        $consulta = "SELECT pa.*, pe.nombre, pe.apellido FROM pasajero pa JOIN persona pe ON pa.idpersona = pe.idpersona";
 
-        if ($baseDatos->Iniciar()) {
-            if ($baseDatos->Ejecutar($consulta)) {
-                while ($fila = $baseDatos->Registro()) {
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($consulta)) {
+                while ($fila = $base->Registro()) {
                     $pasajero = new Pasajero();
-                    // Se cargan los datos del pasajero
-                    $pasajero->cargar(
-                        $fila['pdocumento'], 
-                        $fila['pnombre'], 
-                        $fila['papellido'], 
+                    $pasajero->inicializarPasajero(
+                        $fila['pdocumento'],
+                        $fila['nombre'],
+                        $fila['apellido'],
                         $fila['ptelefono']
                     );
                     $pasajero->setIdPasajero($fila['idpasajero']);
-                    $coleccionPasajeros[] = $pasajero;
+                    $coleccion[] = $pasajero;
                 }
             } else {
-                $this->setMensajeOperacion($baseDatos->getError());
+                $this->setMensajeOperacion($base->getError());
             }
         } else {
-            $this->setMensajeOperacion($baseDatos->getError());
+            $this->setMensajeOperacion($base->getError());
         }
-        return $coleccionPasajeros;
+        return $coleccion;
     }
 }
+
+?>

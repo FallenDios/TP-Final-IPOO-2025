@@ -5,59 +5,61 @@ include_once "Persona.php";
 
 class Responsable extends Persona {
     // Atributos privados
-    private $numeroEmpleado; // ID del responsable, clave primaria
-    private $numeroLicencia; // Número de licencia del responsable
-    private $mensajeOperacion; // Mensaje usado para registrar errores o estados
+    private $numeroEmpleado; // Clave primaria en la tabla responsable
+    private $numeroLicencia; // Número de licencia
+    private $mensajeOperacion; // Para guardar errores de operación
 
-    // Constructor: inicializa los atributos con valores por defecto
+    // Constructor: inicializa todo, incluyendo el padre
     public function __construct() {
-        parent::__construct(); // Llama al constructor de la clase padre (Persona)
+        parent::__construct(); // Llama al constructor de Persona
         $this->numeroEmpleado = 0;
         $this->numeroLicencia = 0;
         $this->mensajeOperacion = "";
     }
 
-    // Método específico para inicializar Responsable (evita redefinir cargar de Persona)
+    // Inicializa con datos usando setters
     public function inicializarResponsable($numeroLicencia, $nombre, $apellido) {
         $this->setNumeroLicencia($numeroLicencia);
-        parent::cargar($nombre, $apellido); // Carga nombre y apellido usando el método de Persona
+        parent::cargar($nombre, $apellido); // Método heredado
     }
 
-    // Métodos de acceso (getters)
+    // Getters
     public function getNumeroEmpleado() { return $this->numeroEmpleado; }
     public function getNumeroLicencia() { return $this->numeroLicencia; }
     public function getMensajeOperacion() { return $this->mensajeOperacion; }
 
-    // Métodos de modificación (setters)
+    // Setters
     public function setNumeroEmpleado($numeroEmpleado) { $this->numeroEmpleado = $numeroEmpleado; }
     public function setNumeroLicencia($numeroLicencia) { $this->numeroLicencia = $numeroLicencia; }
     public function setMensajeOperacion($mensajeOperacion) { $this->mensajeOperacion = $mensajeOperacion; }
 
-    // Método mágico __toString que devuelve una representación del objeto
+    // Representación en texto del objeto
     public function __toString() {
-        return
-            "Numero de Empleado: " . $this->getNumeroEmpleado() . "\n" .
-            "Numero de Licencia: " . $this->getNumeroLicencia() . "\n" .
-            parent::__toString(); // Llama al __toString de Persona para nombre y apellido
+        return "Numero de Empleado: " . $this->getNumeroEmpleado() . "\n" .
+               "Numero de Licencia: " . $this->getNumeroLicencia() . "\n" .
+               parent::__toString(); // Agrega nombre y apellido
     }
 
-    // Busca un responsable por su número de empleado en la BD
+    // Buscar responsable por ID, incluyendo persona
     public function buscar($numeroEmpleado) {
         $baseDatos = new BaseDatos();
         $respuesta = false;
 
-        $consulta = "SELECT * FROM responsable WHERE rnumeroempleado = " . $numeroEmpleado;
+        $consulta = "SELECT r.*, p.nombre, p.apellido
+                     FROM responsable r 
+                     JOIN persona p ON r.idpersona = p.idpersona
+                     WHERE r.rnumeroempleado = " . $numeroEmpleado;
+
         if ($baseDatos->Iniciar()) {
             if ($baseDatos->Ejecutar($consulta)) {
-                $fila = $baseDatos->Registro();
-                if ($fila) {
+                if ($fila = $baseDatos->Registro()) {
                     $this->setNumeroEmpleado($fila['rnumeroempleado']);
                     $this->setNumeroLicencia($fila['rnumerolicencia']);
-                    $this->setNombre($fila['rnombre']);
-                    $this->setApellido($fila['rapellido']);
+                    $this->setNombre($fila['nombre']);
+                    $this->setApellido($fila['apellido']);
                     $respuesta = true;
                 } else {
-                    $this->setMensajeOperacion("No existe Responsable con ese ID.");
+                    $this->setMensajeOperacion("No se encontró responsable con ese ID.");
                 }
             } else {
                 $this->setMensajeOperacion($baseDatos->getError());
@@ -69,19 +71,29 @@ class Responsable extends Persona {
         return $respuesta;
     }
 
-    // Inserta un nuevo responsable en la BD
+    // Inserta una persona y luego un responsable
     public function insertar() {
         $baseDatos = new BaseDatos();
         $respuesta = false;
 
         if ($baseDatos->Iniciar()) {
-            $consultaInsertar = "INSERT INTO responsable(rnumerolicencia, rnombre, rapellido)
-                VALUES('" . $this->getNumeroLicencia() . "', '" . $this->getNombre() . "', '" . $this->getApellido() . "')";
-            $id = $baseDatos->devuelveIDInsercion($consultaInsertar);
+            // Inserta primero en la tabla persona
+            $consultaPersona = "INSERT INTO persona(nombre, apellido)
+                                VALUES('" . $this->getNombre() . "', '" . $this->getApellido() . "')";
+            $idPersona = $baseDatos->devuelveIDInsercion($consultaPersona);
 
-            if ($id != null) {
-                $this->setNumeroEmpleado($id);
-                $respuesta = true;
+            if ($idPersona != null) {
+                // Luego inserta en responsable usando ese ID
+                $consultaResponsable = "INSERT INTO responsable(rnumerolicencia, idpersona)
+                                        VALUES('" . $this->getNumeroLicencia() . "', $idPersona)";
+                $id = $baseDatos->devuelveIDInsercion($consultaResponsable);
+
+                if ($id != null) {
+                    $this->setNumeroEmpleado($id);
+                    $respuesta = true;
+                } else {
+                    $this->setMensajeOperacion($baseDatos->getError());
+                }
             } else {
                 $this->setMensajeOperacion($baseDatos->getError());
             }
@@ -92,18 +104,62 @@ class Responsable extends Persona {
         return $respuesta;
     }
 
-    // Modifica los datos del responsable en la BD
+    // Modifica tanto en persona como en responsable
     public function modificar() {
         $baseDatos = new BaseDatos();
         $respuesta = false;
 
         if ($baseDatos->Iniciar()) {
-            $consultaModificar = "UPDATE responsable SET rnumerolicencia = '" . $this->getNumeroLicencia() .
-                "', rnombre = '" . $this->getNombre() .
-                "', rapellido = '" . $this->getApellido() .
-                "' WHERE rnumeroempleado = " . $this->getNumeroEmpleado();
+            // Primero actualiza los datos en persona
+            $consultaPersona = "UPDATE persona 
+                                SET nombre = '" . $this->getNombre() . "', apellido = '" . $this->getApellido() . "'
+                                WHERE idpersona = (SELECT idpersona FROM responsable WHERE rnumeroempleado = " . $this->getNumeroEmpleado() . ")";
 
-            if ($baseDatos->Ejecutar($consultaModificar)) {
+            $modificoPersona = $baseDatos->Ejecutar($consultaPersona);
+
+            // Luego actualiza los datos en responsable
+            $consultaResponsable = "UPDATE responsable 
+                                    SET rnumerolicencia = '" . $this->getNumeroLicencia() . "'
+                                    WHERE rnumeroempleado = " . $this->getNumeroEmpleado();
+
+            $modificoResponsable = $baseDatos->Ejecutar($consultaResponsable);
+
+            if ($modificoPersona && $modificoResponsable) {
+                $respuesta = true;
+            } else {
+                $this->setMensajeOperacion($baseDatos->getError());
+            }
+
+        } else {
+            $this->setMensajeOperacion($baseDatos->getError());
+        }
+
+        return $respuesta;
+    }
+
+  
+   // Elimina primero de responsable y luego de persona
+public function eliminar() {
+    $baseDatos = new BaseDatos();
+    $respuesta = false;
+
+    if ($baseDatos->Iniciar()) {
+        // 1. Obtener el idpersona asociado a este responsable
+        $consultaIdPersona = "SELECT idpersona FROM responsable WHERE rnumeroempleado = " . $this->getNumeroEmpleado();
+        $idPersona = null;
+
+        if ($baseDatos->Ejecutar($consultaIdPersona)) {
+            if ($fila = $baseDatos->Registro()) {
+                $idPersona = $fila['idpersona'];
+            }
+        }
+
+        // 2. Eliminar de la tabla responsable
+        $consultaResponsable = "DELETE FROM responsable WHERE rnumeroempleado = " . $this->getNumeroEmpleado();
+        if ($baseDatos->Ejecutar($consultaResponsable)) {
+            // 3. Eliminar de la tabla persona (una vez desvinculado)
+            $consultaPersona = "DELETE FROM persona WHERE idpersona = $idPersona";
+            if ($baseDatos->Ejecutar($consultaPersona)) {
                 $respuesta = true;
             } else {
                 $this->setMensajeOperacion($baseDatos->getError());
@@ -112,14 +168,19 @@ class Responsable extends Persona {
             $this->setMensajeOperacion($baseDatos->getError());
         }
 
-        return $respuesta;
+    } else {
+        $this->setMensajeOperacion($baseDatos->getError());
     }
 
-    // Devuelve una colección con todos los responsables registrados en la BD
+    return $respuesta;
+}
+    // Lista todos los responsables
     public function listar() {
         $baseDatos = new BaseDatos();
         $coleccionResponsable = [];
-        $consulta = "SELECT * FROM responsable";
+        $consulta = "SELECT r.*, p.nombre, p.apellido
+                     FROM responsable r 
+                     JOIN persona p ON r.idpersona = p.idpersona";
 
         if ($baseDatos->Iniciar()) {
             if ($baseDatos->Ejecutar($consulta)) {
@@ -127,8 +188,8 @@ class Responsable extends Persona {
                     $responsable = new Responsable();
                     $responsable->inicializarResponsable(
                         $fila['rnumerolicencia'],
-                        $fila['rnombre'],
-                        $fila['rapellido']
+                        $fila['nombre'],
+                        $fila['apellido']
                     );
                     $responsable->setNumeroEmpleado($fila['rnumeroempleado']);
                     $coleccionResponsable[] = $responsable;
@@ -142,29 +203,6 @@ class Responsable extends Persona {
 
         return $coleccionResponsable;
     }
-
-    // Elimina el responsable de la base de datos
-public function eliminar() {
-    $baseDatos = new BaseDatos();
-    $respuesta = false;
-
-    // Prepara la consulta DELETE
-    $consulta = "DELETE FROM responsable WHERE rnumeroempleado = " . $this->getNumeroEmpleado();
-
-    // Ejecuta la operación
-    if ($baseDatos->Iniciar()) {
-        if ($baseDatos->Ejecutar($consulta)) {
-            $respuesta = true;
-        } else {
-            $this->setMensajeOperacion($baseDatos->getError());
-        }
-    } else {
-        $this->setMensajeOperacion($baseDatos->getError());
-    }
-
-    return $respuesta;
-}
-
 }
 
 ?>
